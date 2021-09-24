@@ -1,0 +1,23 @@
+html, body {
+    background-color: rgb(72, 106, 158);
+    width:  100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+#DemoCanvas {
+    background-color: rgb(72, 124, 173);
+}
+
+.draggable-point {
+    border-radius: 10px;
+}
+
+.movable-box {
+    text-align: center; 
+    background-color: #68838b; 
+    color: #ffffff; 
+    width: 300px; 
+    height: 50px;
+}
