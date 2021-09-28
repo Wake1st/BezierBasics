@@ -55,7 +55,7 @@ class Rectangle extends Shape {
       ctx.moveTo(this.x0,this.y0);
       ctx.lineTo(this.x1,this.y1);
       ctx.lineWidth = this.width;
-      ctx.fillStyle = '#2e1919';
+      ctx.strokeStyle = 'rgba(250,250,255,0.1)';
       ctx.stroke();
       
       ctx.fillStyle = '#9ce62a';
@@ -131,29 +131,35 @@ class BezierSegment {
                 var [headDx, headDy] = this.tailNode.transformMove(x,y);
                 var [tailDx, tailDy] = this.headNode.transformMove(x,y);
 
-                console.log(lineDx, lineDy);
-                console.log(headDx, headDy);
-                console.log(lineDx, lineDy);
+                // console.log(lineDx, lineDy);
+                // console.log(headDx, headDy);
+                // console.log(lineDx, lineDy);
+                
+                if (this.headNode.isDragging) {
+                    this.line.x0 += headDx;
+                    this.line.y0 += headDy;
+                    break;
+                }
+                
+                if (this.tailNode.isDragging) {
+                    this.line.x1 += tailDx;
+                    this.line.y1 += tailDy;
+                    break;
+                }
+
                 if (this.line.isDragging) {
+                    this.line.x0 += lineDx;
+                    this.line.x1 += lineDx;
+                    this.line.y0 += lineDy;
+                    this.line.y1 += lineDy;
+
                     this.headNode.x += lineDx;
                     this.headNode.y += lineDy;
                     this.tailNode.x += lineDx;
                     this.tailNode.y += lineDy;
                     break;
                 }
-
-                if (this.headNode.isDragging) {
-                    this.line.x0 += headDx;
-                    this.line.y0 += headDy;
-                    break;
-                }
-
-                if (this.tailNode.isDragging) {
-                    this.line.x1 += tailDx;
-                    this.line.y1 += tailDy;
-                    break;
-                }
-        }
+            }
     }
 }
 
@@ -247,7 +253,7 @@ function drawPoints(points) {
     //  Plot points
     ctx.beginPath();
     for (var i=1; i<points.length; i++)
-        ctx.lineTo(points[i].x,points[i].y);
+    ctx.lineTo(points[i].x,points[i].y);
     
     //  Make the line visible
     ctx.stroke();
@@ -282,6 +288,7 @@ function drawLine() {
     for (var i=0; i < pointCount; i++)
         points.push(bezierQuad(i/pointCount,n0,n1,n2,n3));
 
+    ctx.strokeStyle = '#e2e2ee';    
     drawPoints(points);
 }
 
@@ -292,18 +299,12 @@ var N1 = { x: 120, y: 100};
 var N2 = { x: 280, y: 100};
 var N3 = { x: 300, y: 200};
 
-// var B0 = new Rectangle('B0',N0.x,N0.y,N1.x,N1.y,10,0);
-// var B1 = new Rectangle('B1',N2.x,N2.y,N3.x,N3.y,10,0);
 
 var C0 = new Arc('P0',N0.x, N0.y, 10, Math.PI * 2);
 var C1 = new Arc('P1',N1.x, N1.y, 10, Math.PI * 2);
 var C2 = new Arc('P2',N2.x, N2.y, 10, Math.PI * 2);
 var C3 = new Arc('P3',N3.x, N3.y, 10, Math.PI * 2);
 
-// var nodes = [ N0, N1, N2, N3 ];
-// var points = [];
-// var circles = [ C0, C1, C2, C3 ];
-// var bars = [ B0, B1 ];
 
 var Z0 = new BezierSegment('Z0',N0.x,N0.y,N1.x,N1.y,8);
 var Z1 = new BezierSegment('Z1',N2.x,N2.y,N3.x,N3.y,8);
