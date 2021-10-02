@@ -298,14 +298,9 @@ function resizeScreen() {
     ctx.canvas.height = window.innerHeight;
 }
 
-function drawLine() {
+function drawLine([ n0, n1, n2, n3 ]) {
     points = [];
     var pointCount = 30;
-
-    var n0 = Z0.headNode;
-    var n1 = Z0.tailNode;
-    var n2 = Z1.headNode;
-    var n3 = Z1.tailNode;
 
     for (var i=0; i < pointCount; i++)
         points.push(bezierQuad(i/pointCount,n0,n1,n2,n3));
@@ -331,21 +326,21 @@ var mtt = new MouseTouchTracker(canvas,
     function(evtType, x, y) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (drawing) {
+        if (drawing && evtType === 'down') {
             drawingNodes.push({ x, y });
 
             if (drawingNodes.length === 4) {
                 segments.push(new BezierSegment('Z0', drawingNodes, 8));
                 drawingNodes = [];
+                drawing = false;
             }
         }
 
         segments.forEach(z => {
             z.transform(evtType,x,y);
             z.render(ctx);
+            drawLine(z.nodes);
         });
-
-        drawLine();
     }
 );
 
@@ -357,6 +352,6 @@ window.onload = (event) => {
 };
 
 
-$(document).on("keypress", function (e) {
-    drawing = e.keyCode === 68; //  check for the 'd' key
+document.addEventListener("keypress", function (e) {
+    drawing = e.key === 'd' ? !drawing : drawing; //  check for the 'd' key
 });
