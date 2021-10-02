@@ -1,9 +1,12 @@
 var canvas = document.getElementById('DemoCanvas');
 var ctx = canvas.getContext("2d");
 
-var drawingNodes = [];
 var segments = [];
+
+var drawingSegment;
+var drawingNodes = [];
 var drawing = false;
+var closing = false;
 
 
 class Shape {
@@ -100,16 +103,24 @@ class BezierSegment {
     constructor(name, nodes, width) {
         this.name = name;
         this.nodes = [];
+        this.width = width;
 
         //  Create nodes
-        nodes.forEach((node, i) => this.nodes.push(
-            new Arc(name + '_N' + i, node, width, Math.PI * 2)
-        ));
+        nodes.forEach(node => this.addNode(node));
 
         //this.line = new Rectangle(name + '_L',x0,y0,x1,y1,width,0);
         // this.headNode = new Arc(name + '_N0', node, width, Math.PI * 2);
         // this.tailNode = new Arc(name + '_N1', node, width, Math.PI * 2);
-    }   
+    }
+
+    addNode(node) {
+        this.nodes.push(new Arc(
+            this.name + '_N' + this.nodes.length, 
+            node, 
+            this.width, 
+            Math.PI * 2
+        ));
+    }
 
     render(ctx) {
         this.nodes.forEach(node => node.render(ctx));
@@ -268,6 +279,39 @@ function isHit(shape, x, y) {
 
 
 
+function linearBezier(t, [n0, n1]) {
+    var c0 = 1 - t;
+    var c1 = t;
+
+    return {
+        x: n0.x*c0 + n1.x*c1,
+        y: n0.y*c0 + n1.y*c1
+    }; 
+}
+
+function quadraticBezier(t, [n0, n1, n2]) {
+    var c0 = t*t - 2*t + 1;
+    var c1 = 2*t - 2*t*t;
+    var c2 = t*t;
+
+    return {
+        x: n0.x*c0 + n1.x*c1 + n2.x*c2,
+        y: n0.y*c0 + n1.y*c1 + n2.y*c2
+    }; 
+}
+
+function cubicBezier(t, [n0, n1, n2, n3]) {
+    var c0 = 1 - t*t*t + 3*t*t - 3*t;
+    var c1 = 3*t*t*t - 6*t*t + 3*t;
+    var c2 = 3*t*t - 3*t*t*t;
+    var c3 = t*t*t;
+
+    return {
+        x: n0.x*c0 + n1.x*c1 + n2.x*c2 + n3.x*c3,
+        y: n0.y*c0 + n1.y*c1 + n2.y*c2 + n3.y*c3
+    }; 
+}
+
 function drawPoints(points) {
     //  Reset the current path
     ctx.moveTo(points[0].x, points[0].y);
@@ -281,33 +325,25 @@ function drawPoints(points) {
     ctx.stroke();
 }
 
-function bezierQuad(t, n0, n1, n2, n3) {
-    var c0 = -   t*t*t + 3*t*t - 3*t + 1;
-    var c1 =   3*t*t*t - 6*t*t + 3*t;
-    var c2 = - 3*t*t*t + 3*t*t;
-    var c3 = t*t*t;
-
-    return {
-        x: n0.x*c0 + n1.x*c1 + n2.x*c2 + n3.x*c3,
-        y: n0.y*c0 + n1.y*c1 + n2.y*c2 + n3.y*c3
-    }; 
-}
-
-function resizeScreen() {
-    ctx.canvas.width  = window.innerWidth;
-    ctx.canvas.height = window.innerHeight;
-}
-
-function drawLine([ n0, n1, n2, n3 ]) {
+function drawLine(nodes) {
     points = [];
     var pointCount = 30;
 
-    for (var i=0; i < pointCount; i++)
-        points.push(bezierQuad(i/pointCount,n0,n1,n2,n3));
+    for (var i=0; i < pointCount; i++) {
+        if (nodes.length === 1)
+            points.push(nodes[0]);
+        else if (nodes.length === 2)
+            points.push(linearBezier(i/pointCount,nodes));
+        else if (nodes.length === 3)
+            points.push(quadraticBezier(i/pointCount,nodes));
+        else
+            points.push(cubicBezier(i/pointCount,nodes));
+    }
 
     ctx.strokeStyle = '#e2e2ee';    
     drawPoints(points);
 }
+
 
 
 // var N0 = { x: 100, y: 200 };
@@ -327,23 +363,60 @@ var mtt = new MouseTouchTracker(canvas,
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (drawing && evtType === 'down') {
-            drawingNodes.push({ x, y });
-
-            if (drawingNodes.length === 4) {
-                segments.push(new BezierSegment('Z0', drawingNodes, 8));
-                drawingNodes = [];
-                drawing = false;
+            if (drawingSegment) {
+                switch (drawingSegment.nodes.length) {
+                    case 3:
+                        drawingSegment.addNode({x,y});
+                        segments.push(drawingSegment);
+                        drawingSegment = null;
+            
+                        drawing = false;
+                        closing = false;
+    
+                        console.log(drawing,closing);
+                        break;
+                    default:
+                        drawingSegment.addNode({x,y});
+    
+                        break;
+                }
+            } else {
+                drawingSegment = new BezierSegment(
+                    'Z_' + segments.length, 
+                    [{ x, y }], 
+                    8
+                );
             }
+
         }
+        else if (closing) {
+            segments.push(drawingSegment);
+            drawingSegment = null;
+
+            drawing = false;
+            closing = false;
+        }
+
 
         segments.forEach(z => {
             z.transform(evtType,x,y);
             z.render(ctx);
             drawLine(z.nodes);
         });
+
+        if (drawingSegment) {
+            drawingSegment.transform(evtType,x,y);
+            drawingSegment.render(ctx);
+            drawLine(drawingSegment.nodes);
+        }
     }
 );
 
+
+function resizeScreen() {
+    ctx.canvas.width  = window.innerWidth;
+    ctx.canvas.height = window.innerHeight;
+}
 
 window.onload = (event) => {
     resizeScreen();
@@ -351,7 +424,11 @@ window.onload = (event) => {
     // segments.forEach(z => z.render(ctx));
 };
 
-
 document.addEventListener("keypress", function (e) {
-    drawing = e.key === 'd' ? !drawing : drawing; //  check for the 'd' key
+    if (e.key === 'd') {
+        drawing = !drawing;
+        closing = !drawing;
+
+        console.log(drawing, closing);
+    }
 });
