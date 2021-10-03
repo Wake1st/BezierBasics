@@ -126,11 +126,8 @@ class BezierSegment {
         this.nodes.forEach(node => node.render(ctx));
 
         // this.line.render(ctx);
-        // console.log('line rendered');
         // this.headNode.render(ctx);
-        // console.log('head rendered');
         // this.tailNode.render(ctx);
-        // console.log('tail rendered');
     }
 
     transform = function(evtType, x, y) {
@@ -155,12 +152,6 @@ class BezierSegment {
                 this.nodes.forEach(node => node.transformMove(x,y));
                 break;
 
-                // console.log('moving');
-                // this.tailNode.transformMove(x,y);
-                // this.headNode.transformMove(x,y);
-
-
-                //var [lineDx, lineDy] = this.line.transformMove(x,y);
                 // var [headDx, headDy] = this.tailNode.transformMove(x,y);
                 // var [tailDx, tailDy] = this.headNode.transformMove(x,y);
 
@@ -179,20 +170,7 @@ class BezierSegment {
                 //     this.line.y1 += tailDy;
                 //     break;
                 // }
-
-                // if (this.line.isDragging) {
-                //     this.line.x0 += lineDx;
-                //     this.line.x1 += lineDx;
-                //     this.line.y0 += lineDy;
-                //     this.line.y1 += lineDy;
-
-                //     this.headNode.x += lineDx;
-                //     this.headNode.y += lineDy;
-                //     this.tailNode.x += lineDx;
-                //     this.tailNode.y += lineDy;
-                //     break;
-                // }
-            }
+        }
     }
 }
 
@@ -370,14 +348,10 @@ var mtt = new MouseTouchTracker(canvas,
                         segments.push(drawingSegment);
                         drawingSegment = null;
             
-                        drawing = false;
                         closing = false;
-    
-                        console.log(drawing,closing);
                         break;
                     default:
                         drawingSegment.addNode({x,y});
-    
                         break;
                 }
             } else {
@@ -387,16 +361,15 @@ var mtt = new MouseTouchTracker(canvas,
                     8
                 );
             }
-
         }
         else if (closing) {
-            segments.push(drawingSegment);
+            if (drawingSegment)
+                segments.push(drawingSegment);
             drawingSegment = null;
 
             drawing = false;
             closing = false;
         }
-
 
         segments.forEach(z => {
             z.transform(evtType,x,y);
@@ -428,7 +401,5 @@ document.addEventListener("keypress", function (e) {
     if (e.key === 'd') {
         drawing = !drawing;
         closing = !drawing;
-
-        console.log(drawing, closing);
     }
 });
