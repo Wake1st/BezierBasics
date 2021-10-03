@@ -116,7 +116,7 @@ class BezierSegment {
     addNode(node) {
         this.nodes.push(new Arc(
             this.name + '_N' + this.nodes.length, 
-            node, 
+            node,
             this.width, 
             Math.PI * 2
         ));
@@ -393,8 +393,6 @@ function resizeScreen() {
 
 window.onload = (event) => {
     resizeScreen();
-    // drawLine();
-    // segments.forEach(z => z.render(ctx));
 };
 
 document.addEventListener("keypress", function (e) {
